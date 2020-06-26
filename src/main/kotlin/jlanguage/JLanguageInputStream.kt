@@ -6,12 +6,12 @@ import jlanguage.TypesUtils.LONG
 import jlanguage.TypesUtils.MESSAGE
 import jlanguage.TypesUtils.SHORT
 import jlanguage.TypesUtils.STRING
-import jlanguage.messages.*
+import jlanguage.messages.JMessage
 import java.io.DataInputStream
 import java.io.InputStream
 import java.lang.reflect.Modifier
 
-class JLanguageInputStream(inputStream: InputStream) {
+internal class JLanguageInputStream(inputStream: InputStream) {
 
     private val stream = DataInputStream(inputStream)
 

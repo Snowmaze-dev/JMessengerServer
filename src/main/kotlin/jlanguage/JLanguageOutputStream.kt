@@ -11,7 +11,7 @@ import java.io.DataOutputStream
 import java.io.OutputStream
 import java.lang.reflect.Modifier
 
-class JLanguageOutputStream(outputStream: OutputStream) {
+internal class JLanguageOutputStream(outputStream: OutputStream) {
 
     private val stream = DataOutputStream(outputStream)
 

@@ -4,7 +4,7 @@ import User
 import jlanguage.messages.Dialog
 import jlanguage.messages.TextMessage
 
-class EmptyStorage: Storage {
+internal class EmptyStorage: Storage {
 
     override fun addUser(login: String, password: String): Int {
         return 0

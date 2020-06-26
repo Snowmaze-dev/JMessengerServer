@@ -16,7 +16,7 @@ class Server {
                 e.printStackTrace()
                 continue
             }
-            println("Подключился: " + clientSocket.inetAddress.address)
+            println("Connected: " + clientSocket.inetAddress.hostAddress)
             val thread = UserThread(clientSocket, clientsManager)
             clientsManager.addClient(thread)
             thread.start()

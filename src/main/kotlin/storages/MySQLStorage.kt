@@ -2,14 +2,13 @@ package storages
 
 import User
 import jlanguage.messages.Dialog
-import jlanguage.messages.NewTextMessage
 import jlanguage.messages.TextMessage
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Statement
 
-class MySQLStorage : Storage {
+internal class MySQLStorage : Storage {
 
     private lateinit var connection: Connection
 
@@ -64,7 +63,6 @@ class MySQLStorage : Storage {
     }
 
     override fun getUserLogin(id: Int): String {
-        println("get user login $id")
         val statement = connection.prepareStatement("SELECT login FROM users WHERE id = ?")
         statement.setInt(1, id)
         val result = statement.executeQuery()

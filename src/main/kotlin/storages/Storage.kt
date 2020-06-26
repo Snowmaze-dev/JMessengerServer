@@ -4,7 +4,7 @@ import User
 import jlanguage.messages.Dialog
 import jlanguage.messages.TextMessage
 
-interface Storage {
+internal interface Storage {
 
     fun addUser(login: String, password: String): Int
 
