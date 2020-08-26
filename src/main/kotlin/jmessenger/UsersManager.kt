@@ -11,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 abstract class UsersManager(protected val storage: Storage) : UserThread.UserCallback {
 
-    internal val usersThreads = ConcurrentHashMap<Int, MutableList<SocketUser>>()
-    internal val unauthorizedUserThreads = Collections.synchronizedList(mutableListOf<SocketUser>())
+    protected val usersThreads = ConcurrentHashMap<Int, MutableList<SocketUser>>()
+    protected val unauthorizedUserThreads = Collections.synchronizedList(mutableListOf<SocketUser>())
 
     val online: Int
         get() = usersThreads.size + unauthorizedUserThreads.size
@@ -21,21 +21,18 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
         unauthorizedUserThreads.add(user)
     }
 
-    override fun onAuthorize(socketUser: SocketUser, authMessage: AuthMessage) {
-        socketUser.sendMessage(if (unauthorizedUserThreads.contains(socketUser)) {
+    override fun onAuthorize(user: SocketUser, authMessage: AuthMessage) {
+        user.sendMessage(if (unauthorizedUserThreads.contains(user)) {
             if (authMessage.action == AuthMessage.LOGIN) {
                 try {
-                    val user = storage.getUser(authMessage.login)
-                    if (authMessage.password == user.password.toLowerCase()) {
-                        unauthorizedUserThreads.remove(socketUser)
-                        addUserThread(user.id, socketUser)
-                        socketUser.user = user
-                        SuccessLoginMessage(user.id)
+                    val dbUser = storage.getUser(authMessage.login)
+                    if (authMessage.password == dbUser.password.toLowerCase()) {
+                        unauthorizedUserThreads.remove(user)
+                        addUserThread(dbUser.id, user)
+                        user.user = dbUser
+                        SuccessLoginMessage(dbUser.id)
                     } else {
-                        ErrorMessage().apply {
-                            code = ErrorMessage.WRONG_PASSWORD
-                            message = "Wrong password"
-                        }
+                        ErrorMessage(ErrorMessage.WRONG_PASSWORD, "Wrong password")
                     }
                 } catch (e: NoSuchUserException) {
                     NoSuchUserError()
@@ -45,23 +42,16 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
             } else {
                 try {
                     val id = storage.addUser(authMessage.login, authMessage.password)
-                    addUserThread(id, socketUser)
-                    unauthorizedUserThreads.remove(socketUser)
-                    socketUser.user =
-                        LoggedUser(id, authMessage.login, authMessage.password)
+                    addUserThread(id, user)
+                    unauthorizedUserThreads.remove(user)
+                    user.user = LoggedUser(id, authMessage.login, authMessage.password)
                     SuccessLoginMessage(id)
                 } catch (e: UserAlreadyExistException) {
-                    ErrorMessage().apply {
-                        code = ErrorMessage.USER_ALREADY_EXIST
-                        message = "User already exist"
-                    }
+                    ErrorMessage(ErrorMessage.USER_ALREADY_EXIST,"User already exist")
                 }
             }
         } else {
-            ErrorMessage().apply {
-                code = ErrorMessage.ALREADY_LOGGED
-                message = "This session already logged"
-            }
+            ErrorMessage(ErrorMessage.ALREADY_LOGGED, "This session already logged")
         })
     }
 
@@ -85,11 +75,9 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
         else usersThreads[id] = mutableListOf(user)
     }
 
-    internal fun checkUnauthorized(userThread: SocketUser, requestId: Int = 0): Boolean {
+    protected fun checkUnauthorized(userThread: SocketUser, requestId: Int = 0): Boolean {
         if (unauthorizedUserThreads.contains(userThread)) {
-            userThread.sendMessage(UnauthorizedErrorMessage().apply {
-                this.requestId = requestId
-            })
+            userThread.sendMessage(UnauthorizedErrorMessage(requestId))
             return true
         }
         return false

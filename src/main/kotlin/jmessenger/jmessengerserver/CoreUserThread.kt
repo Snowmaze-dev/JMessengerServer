@@ -6,7 +6,7 @@ import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.requests.*
 import java.net.Socket
 
-class CoreUserThread(socket: Socket, serverName: String, private val callback: UserCallback) : UserThread(socket, serverName, callback) {
+class CoreUserThread(socket: Socket, serverName: String, private val callback: CoreUserCallback) : UserThread(socket, serverName, callback) {
 
     override fun onMessageReceived(message: JMessage) {
         super.onMessageReceived(message)
@@ -30,19 +30,19 @@ class CoreUserThread(socket: Socket, serverName: String, private val callback: U
         }
     }
 
-    interface UserCallback : UserThread.UserCallback {
+    interface CoreUserCallback : UserCallback {
 
-        fun onTextMessage(userThread: SocketUser, request: SendMessageRequest)
+        fun onTextMessage(user: SocketUser, request: SendMessageRequest)
 
-        fun onRequestDialogs(userThread: SocketUser, message: RequestDialogs)
+        fun onRequestDialogs(user: SocketUser, message: RequestDialogs)
 
-        fun onRequestDialogMessages(userThread: SocketUser, message: RequestDialogMessages)
+        fun onRequestDialogMessages(user: SocketUser, message: RequestDialogMessages)
 
-        fun onRequestLoginById(userThread: SocketUser, requestUserById: RequestUserById)
+        fun onRequestLoginById(user: SocketUser, requestUserById: RequestUserById)
 
-        fun onRequestIdByLogin(userThread: SocketUser, requestUserByLogin: RequestUserByLogin)
+        fun onRequestIdByLogin(user: SocketUser, requestUserByLogin: RequestUserByLogin)
 
-        fun onRequestEditMessage(userThread: SocketUser, requestEditMessage: RequestEditMessage)
+        fun onRequestEditMessage(user: SocketUser, requestEditMessage: RequestEditMessage)
 
     }
 }

@@ -2,12 +2,13 @@ package jmessenger.jmessengerserver
 
 import jmessenger.Server
 import jmessenger.storages.Storage
+import jmessenger.utils.LogsManager
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
 
-class CoreServer(storage: Storage): Server {
+class CoreServer(storage: Storage, private val port: Int): Server {
 
     override var serverName = "Core server"
 
@@ -16,8 +17,8 @@ class CoreServer(storage: Storage): Server {
         get() = clientsManager.online
 
     override fun start() {
-        val serverSocket = ServerSocket(port)
         super.start()
+        val serverSocket = ServerSocket(port, 50)
         while (true) {
             val clientSocket: Socket
             try {
@@ -29,15 +30,9 @@ class CoreServer(storage: Storage): Server {
             val thread = CoreUserThread(clientSocket, serverName, clientsManager)
             clientsManager.addClient(thread)
             thread.start()
-            println("Connected: " + clientSocket.inetAddress.hostAddress)
+            LogsManager.log("Connected: " + clientSocket.inetAddress.hostAddress)
             Thread.sleep(10)
         }
-    }
-
-    companion object {
-
-        const val port = 1111
-
     }
 
 }

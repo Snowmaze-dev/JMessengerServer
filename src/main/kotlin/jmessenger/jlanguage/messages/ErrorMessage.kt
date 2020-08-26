@@ -3,11 +3,7 @@ package jmessenger.jlanguage.messages
 import jmessenger.jlanguage.messages.requests.RequestMessage
 import jmessenger.jlanguage.utils.MessagesUtils.ERROR_MESSAGE
 
-open class ErrorMessage(requestId: Int = 0): RequestMessage(ERROR_MESSAGE, requestId) {
-
-    open var code = 0
-
-    open var message = ""
+open class ErrorMessage(open var code: Int = 0, open var message: String = "", requestId: Int = 0): RequestMessage(ERROR_MESSAGE, requestId) {
 
     var messageType = 0 // TODO
 
@@ -28,6 +24,11 @@ open class ErrorMessage(requestId: Int = 0): RequestMessage(ERROR_MESSAGE, reque
         const val PERMISSION_DENIED = 6
 
         const val UNKNOWN = 7
+
+        fun create(code: Int, message: String) = ErrorMessage().apply {
+            this.code = code
+            this.message = message
+        }
 
     }
 

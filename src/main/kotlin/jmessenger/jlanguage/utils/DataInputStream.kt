@@ -35,7 +35,7 @@ class DataInputStream(inputStream: InputStream) : FilterInputStream(inputStream)
     }
 
     fun readUTF(): String {
-        waitBytes(2)
+        waitBytes(2) // TODO
         return stream.readUTF()
     }
 

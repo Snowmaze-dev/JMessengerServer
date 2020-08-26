@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages
 
-class UnauthorizedErrorMessage: ErrorMessage() {
+class UnauthorizedErrorMessage(requestId: Int): ErrorMessage(requestId = requestId) {
 
     override var code = UNAUTHORIZED
 

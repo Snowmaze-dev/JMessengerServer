@@ -1,3 +1,4 @@
+logs-enabled: true
 storage:
   type: MySQL # available types: MySQL, PostgreSQL
   host: '127.0.0.1'
@@ -5,3 +6,8 @@ storage:
   database: 'database'
   login: 'root'
   password: 'password'
+servers:
+  CoreServer:
+    port: 2222
+  FilesServer:
+    port: 3333

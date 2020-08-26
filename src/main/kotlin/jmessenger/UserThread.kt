@@ -7,6 +7,7 @@ import jmessenger.jlanguage.messages.DisconnectMessage
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.SignalMessage
 import jmessenger.jmessengerserver.LoggedUser
+import jmessenger.utils.LogsManager
 import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
@@ -69,11 +70,11 @@ abstract class UserThread(private val socket: Socket, private val serverName: St
         if (message is AuthMessage) {
             callback.onAuthorize(this, message)
         }
-        println("$serverName: Received message from " + user() + " $message")
+        LogsManager.log("$serverName: Received message from " + user() + " $message")
     }
 
     override fun sendMessage(message: JMessage) = try {
-        println("sendMessage to " + user() + ": $message")
+        LogsManager.log("Send message to " + user() + ": $message")
         outputStream.sendMessage(message)
         true
     } catch (e: SocketException) {
@@ -83,16 +84,16 @@ abstract class UserThread(private val socket: Socket, private val serverName: St
     }
 
     private fun onDisconnect() {
-        println(user() + " disconnected from ${serverName.toLowerCase()}")
+        LogsManager.log("$serverName: " + user() + " disconnected")
         if (!socket.isClosed) socket.close()
         callback.onDisconnect(this)
     }
 
     interface UserCallback {
 
-        fun onAuthorize(userThread: SocketUser, authMessage: AuthMessage)
+        fun onAuthorize(user: SocketUser, authMessage: AuthMessage)
 
-        fun onDisconnect(userThread: SocketUser)
+        fun onDisconnect(user: SocketUser)
 
     }
 

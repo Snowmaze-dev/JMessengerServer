@@ -7,6 +7,6 @@ class ListDialogs(var page: Int = 0): RequestMessage(LIST_DIALOGS) {
 
     var list = mutableListOf<Dialog>()
 
-    override fun toString() = "ListDialogs(page=$page, list=$list)"
+    override fun toString() = "ListDialogs(page=$page, list=(size=${list.size}))"
 
 }

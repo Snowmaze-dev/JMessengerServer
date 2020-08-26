@@ -10,12 +10,12 @@ import jmessenger.storages.exceptions.NoSuchUserException
 import java.sql.SQLException
 import java.util.*
 
-class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread.UserCallback {
+class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread.CoreUserCallback {
 
-    override fun onTextMessage(userThread: SocketUser, request: SendMessageRequest) {
-        if (checkUnauthorized(userThread, request.requestId)) return
+    override fun onTextMessage(user: SocketUser, request: SendMessageRequest) {
+        if (checkUnauthorized(user, request.requestId)) return
         val message = request.textMessage
-        message.fromUser = userThread.user!!.id
+        message.fromUser = user.user!!.id
         val time = Date().time
         try {
             val addedMessage = storage.addMessage(message)
@@ -25,72 +25,72 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
                 id = addedMessage.id
             }
         } catch (e: NoSuchUserException) {
-            userThread.sendMessage(NoSuchUserError(request.requestId))
+            user.sendMessage(NoSuchUserError(request.requestId))
             return
         } catch (e: SQLException) {
             e.printStackTrace()
-            userThread.sendMessage(UnknownError(request.requestId))
+            user.sendMessage(UnknownError(request.requestId))
             return
         }
         val notification = NewMessageNotification().apply { this.message = message }
-        sendMessageExcept(message.fromUser, userThread, notification)
+        sendMessageExcept(message.fromUser, user, notification)
         if(message.fromUser != message.toUser) {
             usersThreads[message.toUser]?.toList()?.forEach {
                 it.sendMessage(notification)
             }
         }
-        userThread.sendMessage(MessageSentMessage(message.id, message.dialogId, time), request.requestId)
+        user.sendMessage(MessageSentMessage(message.id, message.dialogId, time), request.requestId)
     }
 
-    override fun onRequestDialogs(userThread: SocketUser, message: RequestDialogs) {
-        if (checkUnauthorized(userThread, message.requestId)) return
-        var dialogs = storage.getDialogs(userThread.user!!.id, message.page)
+    override fun onRequestDialogs(user: SocketUser, message: RequestDialogs) {
+        if (checkUnauthorized(user, message.requestId)) return
+        var dialogs = storage.getDialogs(user.user!!.id, message.page)
         dialogs = dialogs.reversed()
-        userThread.sendMessage(ListDialogs(message.page).apply {
+        user.sendMessage(ListDialogs(message.page).apply {
             list = dialogs.toMutableList()
             requestId = message.requestId
         })
     }
 
-    override fun onRequestDialogMessages(userThread: SocketUser, message: RequestDialogMessages) {
-        if (checkUnauthorized(userThread, message.requestId)) return
+    override fun onRequestDialogMessages(user: SocketUser, message: RequestDialogMessages) {
+        if (checkUnauthorized(user, message.requestId)) return
         val messages = storage.getMessages(message.dialogId, message.fromId)
-        userThread.sendMessage(ListTextMessages(messages), message.requestId)
+        user.sendMessage(ListTextMessages(messages), message.requestId)
     }
 
-    override fun onRequestLoginById(userThread: SocketUser, requestUserById: RequestUserById) {
-        if (checkUnauthorized(userThread, requestUserById.requestId)) return
+    override fun onRequestLoginById(user: SocketUser, requestUserById: RequestUserById) {
+        if (checkUnauthorized(user, requestUserById.requestId)) return
         try {
             val login = storage.getUserLogin(requestUserById.id)
-            userThread.sendMessage(
+            user.sendMessage(
                 UserMessage(requestUserById.id, login,
-                    storage.getDialog(userThread.user!!.id, requestUserById.id)?.apply {
+                    storage.getDialog(user.user!!.id, requestUserById.id)?.apply {
                         this.login = login
                     }),
                 requestUserById.requestId
             )
         } catch (e: NoSuchUserException) {
-            userThread.sendMessage(NoSuchUserError(), requestUserById.requestId)
+            user.sendMessage(NoSuchUserError(), requestUserById.requestId)
         }
     }
 
-    override fun onRequestIdByLogin(userThread: SocketUser, requestUserByLogin: RequestUserByLogin) {
+    override fun onRequestIdByLogin(user: SocketUser, requestUserByLogin: RequestUserByLogin) {
         try {
             val id = storage.getUserId(requestUserByLogin.login)
-            userThread.sendMessage(UserMessage(id, requestUserByLogin.login, storage.getDialog(userThread.user!!.id, id)).apply {
+            user.sendMessage(UserMessage(id, requestUserByLogin.login, storage.getDialog(user.user!!.id, id)).apply {
                     this.login = requestUserByLogin.login
                 }, requestUserByLogin.requestId
             )
         } catch (e: NoSuchUserException) {
-            userThread.sendMessage(NoSuchUserError(), requestUserByLogin.requestId)
+            user.sendMessage(NoSuchUserError(), requestUserByLogin.requestId)
         }
     }
 
-    override fun onRequestEditMessage(userThread: SocketUser, requestEditMessage: RequestEditMessage) {
-        if (checkUnauthorized(userThread, requestEditMessage.requestId)) return
+    override fun onRequestEditMessage(user: SocketUser, requestEditMessage: RequestEditMessage) {
+        if (checkUnauthorized(user, requestEditMessage.requestId)) return
         val editedMessage = requestEditMessage.textMessage
         val message = storage.getMessage(editedMessage.id) // MessageNotFound TODO
-        val userId = userThread.user!!.id
+        val userId = user.user!!.id
         if (message.fromUser == userId) {
             storage.editMessage(message.id, editedMessage.message)
             editedMessage.attachments.forEach {
@@ -109,15 +109,15 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
             val notification = MessageEditedNotification().apply {
                 textMessage = editedMessage
             }
-            sendMessageExcept(userThread.user!!.id, userThread, notification)
+            sendMessageExcept(user.user!!.id, user, notification)
             if(message.fromUser != message.toUser) {
                 usersThreads[otherUser]?.toList()?.forEach {
                     it.sendMessage(notification)
                 }
             }
-            userThread.sendMessage(SuccessMessage(), requestEditMessage.requestId)
+            user.sendMessage(SuccessMessage(), requestEditMessage.requestId)
         }
-        else userThread.sendMessage(PermissionDeniedMessage(), requestEditMessage.requestId)
+        else user.sendMessage(PermissionDeniedMessage(), requestEditMessage.requestId)
     }
 
     private fun sendMessageExcept(toUser: Int, user: SocketUser, message: RequestMessage, requestId: Int) {

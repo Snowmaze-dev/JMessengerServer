@@ -7,6 +7,8 @@ import jmessenger.jmessengerserver.LoggedUser
 
 interface Storage {
 
+    fun init()
+
     fun addUser(login: String, password: String): Int
 
     fun getUser(login: String): LoggedUser

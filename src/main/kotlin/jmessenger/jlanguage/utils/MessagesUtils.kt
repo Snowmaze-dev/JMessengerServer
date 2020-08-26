@@ -44,7 +44,7 @@ object MessagesUtils {
 
     const val REQUEST_EDIT_MESSAGE: Short = 18
 
-    const val REQUEST_DELETE_MESSAGE: Short = 19
+    const val REQUEST_DELETE_MESSAGE: Short = 19 // TODO
 
     const val MESSAGE_EDITED_NOTIFICATION: Short = 20
 

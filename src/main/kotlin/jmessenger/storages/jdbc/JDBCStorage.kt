@@ -8,6 +8,8 @@ import jmessenger.storages.Message
 import jmessenger.storages.Storage
 import jmessenger.storages.exceptions.NoSuchUserException
 import jmessenger.storages.exceptions.UserAlreadyExistException
+import jmessenger.utils.LogsManager
+import jmessenger.utils.startThread
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
@@ -18,17 +20,17 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
 
     internal lateinit var connection: Connection
 
-    open fun init() {
+    override fun init() {
         connection = openConnection(host, port, database, login, password)
-        Thread {
+        startThread {
             val sleepTime: Long = 12 * 60 * 60 * 1000
             while (true) {
                 Thread.sleep(sleepTime)
-                println("Reopen connection to JDBC DB")
+                LogsManager.log("Reopen connection to JDBC DB")
                 connection.close()
                 connection = openConnection(host, port, database, login, password)
             }
-        }.start()
+        }
     }
 
     override fun addUser(login: String, password: String): Int {

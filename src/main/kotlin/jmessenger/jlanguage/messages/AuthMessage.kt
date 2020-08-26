@@ -15,7 +15,7 @@ class AuthMessage(var login: String = "", var password: String = ""): JMessage(A
     }
 
     override fun toString(): String {
-        return "AuthMessage(login='$login', password='$password')"
+        return "AuthMessage(login='$login', action=$action)"
     }
 
 }

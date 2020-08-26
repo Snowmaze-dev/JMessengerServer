@@ -5,7 +5,8 @@ import jmessenger.jlanguage.messages.Document.Companion.IMAGE
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.requests.RequestDownloadDocument
 import jmessenger.jlanguage.messages.requests.RequestUploadDocument
-import jmessenger.utils.RandomString
+import jmessenger.utils.LogsManager
+import jmessenger.utils.RandomStringGenerator
 import jmessenger.utils.round
 import java.io.File
 import java.net.Socket
@@ -20,7 +21,7 @@ class UserFileThread(socket: Socket, serverName: String, private val threadCallb
             if (bufferSize > 32) return // TODO
             val bytesCount = inputStream.readInt()
             if (message.documentType == IMAGE) {
-                val fileName = RandomString.randomString(20) + ".jpg"
+                val fileName = RandomStringGenerator.randomString(20) + ".jpg"
                 val file = File(folder, fileName)
                 file.createNewFile()
                 val fileOut = file.outputStream()
@@ -37,7 +38,7 @@ class UserFileThread(socket: Socket, serverName: String, private val threadCallb
         val fileInputStream = File(folder, filename).inputStream()
         val start = Date().time
         outputStream.writeStream(fileInputStream)
-        println("File $filename sent in " + ((Date().time - start)/1000.0).round(2) + " seconds to " + user())
+        LogsManager.log("File $filename sent in " + ((Date().time - start)/1000.0).round(2) + " seconds to " + user())
     }
 
     interface UserFileThreadCallback : UserCallback {

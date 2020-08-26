@@ -1,6 +1,6 @@
 package jmessenger
 
-import jmessenger.utils.LogManager.log
+import jmessenger.utils.LogsManager.log
 
 interface Server {
 
