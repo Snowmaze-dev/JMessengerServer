@@ -59,7 +59,7 @@ class JMessenger {
             servers.addAll(CoreServer(storage, coreServerPort), FilesServer(storage, filesServerPort))
             startServers(servers)
         } catch (e: Exception) {
-            println("Invalid config.yml file")
+            log("Invalid config.yml file")
             e.printStackTrace()
             return
         }

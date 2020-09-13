@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages
 
-import jmessenger.jlanguage.utils.MessagesUtils.AUTH_MESSAGE
+import jmessenger.jlanguage.utils.JMessagesUtils.AUTH_MESSAGE
 
 class AuthMessage(var login: String = "", var password: String = ""): JMessage(AUTH_MESSAGE) {
 

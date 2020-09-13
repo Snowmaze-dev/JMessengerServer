@@ -1,7 +1,7 @@
 package jmessenger.jlanguage.messages
 
 import jmessenger.jlanguage.messages.requests.RequestMessage
-import jmessenger.jlanguage.utils.MessagesUtils.LIST_DIALOGS
+import jmessenger.jlanguage.utils.JMessagesUtils.LIST_DIALOGS
 
 class ListDialogs(var page: Int = 0): RequestMessage(LIST_DIALOGS) {
 

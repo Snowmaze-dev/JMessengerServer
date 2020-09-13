@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages
 
-import jmessenger.jlanguage.utils.MessagesUtils.DOCUMENT
+import jmessenger.jlanguage.utils.JMessagesUtils.DOCUMENT
 
 open class Document(id: Int = 0, var name: String = "", var documentType: Int = -1) : Attachment(DOCUMENT, id) {
 

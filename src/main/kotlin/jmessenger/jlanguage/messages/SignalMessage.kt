@@ -1,5 +1,5 @@
 package jmessenger.jlanguage.messages
 
-import jmessenger.jlanguage.utils.MessagesUtils.SIGNAL_MESSAGE
+import jmessenger.jlanguage.utils.JMessagesUtils.SIGNAL_MESSAGE
 
 class SignalMessage: JMessage(SIGNAL_MESSAGE)

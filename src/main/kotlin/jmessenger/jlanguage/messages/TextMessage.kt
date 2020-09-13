@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages
 
-import jmessenger.jlanguage.utils.MessagesUtils.TEXT_MESSAGE
+import jmessenger.jlanguage.utils.JMessagesUtils.TEXT_MESSAGE
 
 open class TextMessage: JMessage(TEXT_MESSAGE) {
 

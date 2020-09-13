@@ -19,6 +19,7 @@ class CoreServer(storage: Storage, private val port: Int): Server {
     override fun start() {
         super.start()
         val serverSocket = ServerSocket(port, 50)
+        val lowerServerName = serverName.toLowerCase()
         while (true) {
             val clientSocket: Socket
             try {
@@ -30,7 +31,7 @@ class CoreServer(storage: Storage, private val port: Int): Server {
             val thread = CoreUserThread(clientSocket, serverName, clientsManager)
             clientsManager.addClient(thread)
             thread.start()
-            LogsManager.log("Connected: " + clientSocket.inetAddress.hostAddress)
+            LogsManager.log("Connected to $lowerServerName: " + clientSocket.inetAddress.hostAddress)
             Thread.sleep(10)
         }
     }

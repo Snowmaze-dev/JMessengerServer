@@ -1,5 +1,5 @@
 package jmessenger.jlanguage.messages.requests
 
-import jmessenger.jlanguage.utils.MessagesUtils.REQUEST_DELETE_DOCUMENT
+import jmessenger.jlanguage.utils.JMessagesUtils.REQUEST_DELETE_DOCUMENT
 
 class RequestDeleteDocument: RequestMessage(REQUEST_DELETE_DOCUMENT)

@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages
 
-import jmessenger.jlanguage.utils.MessagesUtils.DIALOG_MESSAGE
+import jmessenger.jlanguage.utils.JMessagesUtils.DIALOG_MESSAGE
 
 class Dialog(var login: String = ""): JMessage(DIALOG_MESSAGE) {
 

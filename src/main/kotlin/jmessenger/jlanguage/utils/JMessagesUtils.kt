@@ -1,10 +1,12 @@
 package jmessenger.jlanguage.utils
 
+import jmessenger.jlanguage.Ignore
 import jmessenger.jlanguage.UnknownMessageType
 import jmessenger.jlanguage.messages.*
 import jmessenger.jlanguage.messages.requests.*
+import java.lang.reflect.Modifier
 
-object MessagesUtils {
+object JMessagesUtils {
 
     const val SIGNAL_MESSAGE: Short = 0
 
@@ -59,6 +61,48 @@ object MessagesUtils {
     const val REQUEST_DOWNLOAD_DOCUMENT: Short = 25
 
     const val REQUEST_DELETE_DOCUMENT: Short = 26
+
+    private val messagesFields = mutableMapOf<Class<out JMessage>, Array<Field>>()
+
+    init {
+        getJMessageFields(SignalMessage::class.java)
+        getJMessageFields(AuthMessage::class.java)
+        getJMessageFields(TextMessage::class.java)
+        getJMessageFields(ListTextMessages::class.java)
+        getJMessageFields(ListDialogs::class.java)
+        getJMessageFields(ErrorMessage::class.java)
+        getJMessageFields(SuccessMessage::class.java)
+        getJMessageFields(RequestUserById::class.java)
+        getJMessageFields(RequestUserByLogin::class.java)
+        getJMessageFields(RequestDialogs::class.java)
+        getJMessageFields(RequestDialogMessages::class.java)
+        getJMessageFields(RequestEditMessage::class.java)
+        getJMessageFields(SendMessageRequest::class.java)
+        getJMessageFields(SuccessLoginMessage::class.java)
+        getJMessageFields(RequestUploadDocument::class.java)
+        getJMessageFields(RequestDownloadDocument::class.java)
+        getJMessageFields(DisconnectMessage::class.java)
+        getJMessageFields(RequestDeleteDocument::class.java)
+        getJMessageFields(Document::class.java)
+        getJMessageFields(Dialog::class.java)
+    }
+
+    fun getMessageFields(obj: JMessage) = messagesFields.getValue(obj.javaClass)
+
+    private fun getJMessageFields(clazz: Class<out JMessage>) {
+        val fields = mutableListOf<Field>()
+        for(field in ReflectUtils.getFields(clazz)) {
+            if(skipField(field)) continue
+            fields.add(if(field.isAccessible) FieldWrapper(field) else MethodsField(clazz, field))
+        }
+        messagesFields[clazz] = fields.toTypedArray()
+    }
+
+    private fun skipField(field: java.lang.reflect.Field) = when {
+        field.isAnnotationPresent(Ignore::class.java) -> true
+        Modifier.isStatic(field.modifiers) -> true
+        else -> false
+    }
 
     fun getMessage(messageType: Short) = when (messageType) {
         SIGNAL_MESSAGE -> SignalMessage()

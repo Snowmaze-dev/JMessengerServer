@@ -1,7 +1,7 @@
 package jmessenger.jlanguage.messages
 
 import jmessenger.jlanguage.messages.requests.RequestMessage
-import jmessenger.jlanguage.utils.MessagesUtils.ERROR_MESSAGE
+import jmessenger.jlanguage.utils.JMessagesUtils.ERROR_MESSAGE
 
 open class ErrorMessage(open var code: Int = 0, open var message: String = "", requestId: Int = 0): RequestMessage(ERROR_MESSAGE, requestId) {
 

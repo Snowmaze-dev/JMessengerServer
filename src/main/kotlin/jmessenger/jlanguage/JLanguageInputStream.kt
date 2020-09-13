@@ -2,8 +2,7 @@ package jmessenger.jlanguage
 
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.utils.DataInputStream
-import jmessenger.jlanguage.utils.MessagesUtils
-import jmessenger.jlanguage.utils.ReflectUtils
+import jmessenger.jlanguage.utils.JMessagesUtils
 import jmessenger.jlanguage.utils.TypesUtils
 import jmessenger.jlanguage.utils.TypesUtils.INT
 import jmessenger.jlanguage.utils.TypesUtils.LIST
@@ -13,7 +12,6 @@ import jmessenger.jlanguage.utils.TypesUtils.SHORT
 import jmessenger.jlanguage.utils.TypesUtils.STRING
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.reflect.Modifier
 
 internal class JLanguageInputStream(inputStream: InputStream) {
 
@@ -30,13 +28,9 @@ internal class JLanguageInputStream(inputStream: InputStream) {
             val name = stream.readUTF()
             map[name] = readNextValue(type)
         }
-        val message = MessagesUtils.getMessage(messageType)
-        for (field in ReflectUtils.getFields(message)) {
-            if (field.isAnnotationPresent(Ignore::class.java)) continue
-            if (Modifier.isStatic(field.modifiers)) continue
-            val value = map[field.name] ?: continue
-            if (field.isAccessible) field.set(message, value)
-            else ReflectUtils.getMethod(message, "set" + field.name.capitalize(), field.type).invoke(message, value)
+        val message = JMessagesUtils.getMessage(messageType)
+        for (field in JMessagesUtils.getMessageFields(message)) {
+            field.set(message, map[field.name] ?: continue)
         }
         return message
     }

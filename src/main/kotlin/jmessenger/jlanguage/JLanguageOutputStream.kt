@@ -1,7 +1,7 @@
 package jmessenger.jlanguage
 
 import jmessenger.jlanguage.messages.JMessage
-import jmessenger.jlanguage.utils.ReflectUtils
+import jmessenger.jlanguage.utils.JMessagesUtils
 import jmessenger.jlanguage.utils.TypesUtils
 import jmessenger.jlanguage.utils.TypesUtils.END
 import jmessenger.jlanguage.utils.TypesUtils.INT
@@ -13,7 +13,6 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.reflect.Modifier
 
 internal class JLanguageOutputStream(outputStream: OutputStream) {
 
@@ -21,11 +20,8 @@ internal class JLanguageOutputStream(outputStream: OutputStream) {
 
     private fun writeMessage(message: JMessage) {
         stream.writeShort(message.type.toInt())
-        for (field in ReflectUtils.getFields(message)) {
-            if (field.isAnnotationPresent(Ignore::class.java)) continue
-            if (Modifier.isStatic(field.modifiers)) continue
-            val value = (if (field.isAccessible) field.get(message)
-            else ReflectUtils.getMethod(message, "get" + field.name.capitalize()).invoke(message)) ?: continue
+        for (field in JMessagesUtils.getMessageFields(message)) {
+            val value = field.get(message) ?: continue
             val type = TypesUtils.getType(value)
             if(type == LIST && (value as List<*>).size==0) continue // Skip field if list is empty
             stream.writeByte(type.toInt())

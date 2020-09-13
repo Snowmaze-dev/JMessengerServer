@@ -5,9 +5,9 @@ import java.lang.reflect.Method
 
 object ReflectUtils {
 
-    fun getFields(obj: Any): List<Field> {
+    fun getFields(clazz: Class<*>): List<Field> {
         val fields = mutableListOf<Field>()
-        var clazz: Class<in Any> = obj.javaClass
+        var clazz = clazz
         while(clazz != Any::class.java) {
             fields.addAll(clazz.declaredFields)
             clazz = clazz.superclass
@@ -15,8 +15,8 @@ object ReflectUtils {
         return fields.toList()
     }
 
-    fun getMethod(obj: Any, methodName: String, vararg parameterTypes: Class<*>): Method {
-        var clazz: Class<in Any> = obj.javaClass
+    fun getMethod(clazz: Class<*>, methodName: String, vararg parameterTypes: Class<*>): Method? {
+        var clazz = clazz
         while(clazz != Any::class.java) {
             try {
                 return clazz.getDeclaredMethod(methodName, *parameterTypes)
@@ -24,7 +24,7 @@ object ReflectUtils {
             catch (e: NoSuchMethodException) { }
             clazz = clazz.superclass
         }
-        throw NoSuchMethodException()
+        return null
     }
 
 }

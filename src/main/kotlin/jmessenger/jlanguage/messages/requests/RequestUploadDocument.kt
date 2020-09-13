@@ -1,6 +1,6 @@
 package jmessenger.jlanguage.messages.requests
 
-import jmessenger.jlanguage.utils.MessagesUtils.REQUEST_UPLOAD_DOCUMENT
+import jmessenger.jlanguage.utils.JMessagesUtils.REQUEST_UPLOAD_DOCUMENT
 
 open class RequestUploadDocument(requestId: Int = 0) : RequestMessage(REQUEST_UPLOAD_DOCUMENT, requestId) {
 
