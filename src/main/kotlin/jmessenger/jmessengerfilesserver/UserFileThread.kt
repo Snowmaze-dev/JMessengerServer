@@ -17,7 +17,7 @@ class UserFileThread(socket: Socket, serverName: String, private val threadCallb
     override fun onMessageReceived(message: JMessage) {
         super.onMessageReceived(message)
         if(message is RequestUploadDocument) {
-            val bufferSize = inputStream.readInt() // TODO
+            val bufferSize = inputStream.readInt()
             if (bufferSize > 32) return // TODO
             val bytesCount = inputStream.readInt()
             if (message.documentType == IMAGE) {
@@ -34,7 +34,7 @@ class UserFileThread(socket: Socket, serverName: String, private val threadCallb
         }
     }
 
-    override fun sendFileToUser(filename: String) {
+    override fun sendFileToUser(filename: String) { // TODO
         val fileInputStream = File(folder, filename).inputStream()
         val start = Date().time
         outputStream.writeStream(fileInputStream)

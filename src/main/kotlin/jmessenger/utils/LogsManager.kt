@@ -42,12 +42,20 @@ object LogsManager {
         println(log)
     }
 
+    fun logError(where: String, e: Throwable) { // TODO
+        log("$where error: ${e.message}")
+    }
+
     fun logInput(text: String) {
         if (logsEnabled) {
             val date = dateFormat.format(Date())
             logsOutputStream.println("$date >> $text")
             logsOutputStream.flush()
         }
+    }
+
+    fun save() {
+        logsOutputStream.close()
     }
 
 }

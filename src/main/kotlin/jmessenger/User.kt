@@ -9,7 +9,7 @@ interface User {
 
     fun user() = (user?.login ?: "unauthorized user")
 
-    fun sendMessage(message: JMessage): Boolean
+    fun sendMessage(message: JMessage, log: Boolean = true)
 
     fun onMessageReceived(message: JMessage)
 

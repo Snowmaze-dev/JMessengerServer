@@ -1,10 +1,16 @@
 package jmessenger.jlanguage.utils
 
 import jmessenger.jlanguage.Ignore
-import jmessenger.jlanguage.UnknownMessageType
 import jmessenger.jlanguage.messages.*
 import jmessenger.jlanguage.messages.requests.*
+import jmessenger.jlanguage.utils.exceptions.UnknownMessage
+import jmessenger.jlanguage.utils.exceptions.UnknownMessageType
+import jmessenger.jlanguage.utils.fields.Field
+import jmessenger.jlanguage.utils.fields.FieldWrapper
+import jmessenger.jlanguage.utils.fields.MethodsField
+import jmessenger.jlanguage.utils.fields.exceptions.FieldGetterAndSetterNotAccessibleException
 import java.lang.reflect.Modifier
+import kotlin.reflect.KClass
 
 object JMessagesUtils {
 
@@ -64,44 +70,61 @@ object JMessagesUtils {
 
     private val messagesFields = mutableMapOf<Class<out JMessage>, Array<Field>>()
 
-    init {
-        getJMessageFields(SignalMessage::class.java)
-        getJMessageFields(AuthMessage::class.java)
-        getJMessageFields(TextMessage::class.java)
-        getJMessageFields(ListTextMessages::class.java)
-        getJMessageFields(ListDialogs::class.java)
-        getJMessageFields(ErrorMessage::class.java)
-        getJMessageFields(SuccessMessage::class.java)
-        getJMessageFields(RequestUserById::class.java)
-        getJMessageFields(RequestUserByLogin::class.java)
-        getJMessageFields(RequestDialogs::class.java)
-        getJMessageFields(RequestDialogMessages::class.java)
-        getJMessageFields(RequestEditMessage::class.java)
-        getJMessageFields(SendMessageRequest::class.java)
-        getJMessageFields(SuccessLoginMessage::class.java)
-        getJMessageFields(RequestUploadDocument::class.java)
-        getJMessageFields(RequestDownloadDocument::class.java)
-        getJMessageFields(DisconnectMessage::class.java)
-        getJMessageFields(RequestDeleteDocument::class.java)
-        getJMessageFields(Document::class.java)
-        getJMessageFields(Dialog::class.java)
+    fun getMessageFields(obj: JMessage): Array<Field> {
+        var clazz: Class<JMessage> = obj.javaClass
+        do {
+            if(messagesFields.containsKey(clazz)) {
+                return messagesFields[clazz]!!
+            }
+            clazz = clazz.superclass as Class<JMessage>
+        } while(clazz != JMessage::class.java)
+        throw UnknownMessage("Unknown message: ${obj.javaClass.name}")
     }
 
-    fun getMessageFields(obj: JMessage) = messagesFields.getValue(obj.javaClass)
+    fun init() {
+        addJMessagesFields(SignalMessage::class,
+            AuthMessage::class,
+            TextMessage::class,
+            ListTextMessages::class,
+            ListDialogs::class,
+            ErrorMessage::class,
+            SuccessMessage::class,
+            RequestUserById::class,
+            RequestUserByLogin::class,
+            RequestDialogs::class,
+            RequestDialogMessages::class,
+            RequestEditMessage::class,
+            SendMessageRequest::class,
+            SuccessLoginMessage::class,
+            RequestUploadDocument::class,
+            RequestDownloadDocument::class,
+            DisconnectMessage::class,
+            RequestDeleteDocument::class,
+            Document::class,
+            Dialog::class,
+            MessageSentMessage::class,
+            MessageEditedNotification::class,
+            NewMessageNotification::class,
+            DocumentUploadedMessage::class
+        )
+    }
 
-    private fun getJMessageFields(clazz: Class<out JMessage>) {
+    private fun addJMessagesFields(vararg jMessages: KClass<out JMessage>) {
+        for (jMessage in jMessages) {
+            addJMessageFields(jMessage.java)
+        }
+    }
+
+    private fun addJMessageFields(clazz: Class<out JMessage>) {
         val fields = mutableListOf<Field>()
-        for(field in ReflectUtils.getFields(clazz)) {
-            if(skipField(field)) continue
-            fields.add(if(field.isAccessible) FieldWrapper(field) else MethodsField(clazz, field))
+        for (field in ReflectUtils.getFields(clazz)) {
+            if (field.isAnnotationPresent(Ignore::class.java) || Modifier.isStatic(field.modifiers)) continue
+            try {
+                fields.add(if (field.isAccessible) FieldWrapper(field) else MethodsField(clazz, field))
+            }
+            catch (e: FieldGetterAndSetterNotAccessibleException) { }
         }
         messagesFields[clazz] = fields.toTypedArray()
-    }
-
-    private fun skipField(field: java.lang.reflect.Field) = when {
-        field.isAnnotationPresent(Ignore::class.java) -> true
-        Modifier.isStatic(field.modifiers) -> true
-        else -> false
     }
 
     fun getMessage(messageType: Short) = when (messageType) {

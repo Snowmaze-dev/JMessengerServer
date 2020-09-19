@@ -9,7 +9,11 @@ interface Server {
     val online: Int
 
     fun start() {
-        log("$serverName started")
+        log("$serverName is started")
+    }
+
+    fun stop() {
+        log("$serverName is stopped")
     }
 
 }

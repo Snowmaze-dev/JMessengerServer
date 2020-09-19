@@ -7,25 +7,25 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
+class CoreServer(storage: Storage, port: Int): Server {
 
-class CoreServer(storage: Storage, private val port: Int): Server {
+    override val serverName = "Core server"
 
-    override var serverName = "Core server"
+    private val serverSocket = ServerSocket(port, 50)
 
     private val clientsManager = CoreUsersManager(storage)
+
     override val online
         get() = clientsManager.online
 
     override fun start() {
-        super.start()
-        val serverSocket = ServerSocket(port, 50)
         val lowerServerName = serverName.toLowerCase()
-        while (true) {
+        super.start()
+        while (!serverSocket.isClosed) {
             val clientSocket: Socket
             try {
                 clientSocket = serverSocket.accept()
             } catch (e: IOException) {
-                e.printStackTrace()
                 continue
             }
             val thread = CoreUserThread(clientSocket, serverName, clientsManager)
@@ -36,4 +36,9 @@ class CoreServer(storage: Storage, private val port: Int): Server {
         }
     }
 
+    override fun stop() {
+        clientsManager.stop()
+        serverSocket.close()
+        super.stop()
+    }
 }

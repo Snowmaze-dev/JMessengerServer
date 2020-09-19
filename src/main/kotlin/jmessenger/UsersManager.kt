@@ -50,9 +50,7 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
                     ErrorMessage(ErrorMessage.USER_ALREADY_EXIST,"User already exist")
                 }
             }
-        } else {
-            ErrorMessage(ErrorMessage.ALREADY_LOGGED, "This session already logged")
-        })
+        } else ErrorMessage(ErrorMessage.ALREADY_LOGGED, "This session already logged"))
     }
 
     override fun onDisconnect(user: SocketUser) {
@@ -81,6 +79,11 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
             return true
         }
         return false
+    }
+
+    fun stop() {
+        usersThreads.forEachValue(10) { it -> it.forEach { it.disconnect() } }
+        unauthorizedUserThreads.forEach { it.disconnect() }
     }
 
 }

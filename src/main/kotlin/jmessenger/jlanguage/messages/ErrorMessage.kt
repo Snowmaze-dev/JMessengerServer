@@ -5,7 +5,7 @@ import jmessenger.jlanguage.utils.JMessagesUtils.ERROR_MESSAGE
 
 open class ErrorMessage(open var code: Int = 0, open var message: String = "", requestId: Int = 0): RequestMessage(ERROR_MESSAGE, requestId) {
 
-    var messageType = 0 // TODO
+    var messageType = 0
 
     companion object {
 

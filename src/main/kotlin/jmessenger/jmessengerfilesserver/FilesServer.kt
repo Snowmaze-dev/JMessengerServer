@@ -8,25 +8,27 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
-class FilesServer(storage: Storage, private val port: Int): Server {
+class FilesServer(storage: Storage, port: Int, private val started: () -> Unit): Server {
+
+    override val serverName = "Files server"
+
+    private val serverSocket = ServerSocket(port, 50)
 
     private val clientsManager = UsersFileManager(storage)
-    override var serverName = "Files server"
     override val online: Int
         get() = clientsManager.online
 
     override fun start() {
         val lowerServerName = serverName.toLowerCase()
-        val socket = ServerSocket(port, 50)
         val folder = File("files")
         if(folder.mkdirs()) LogsManager.log("Files folder created at ${folder.absolutePath} ")
         super.start()
-        while (true) {
+        started()
+        while (!serverSocket.isClosed) {
             val clientSocket: Socket
             try {
-                clientSocket = socket.accept()
+                clientSocket = serverSocket.accept()
             } catch (e: IOException) {
-                e.printStackTrace()
                 continue
             }
             LogsManager.log("Connected to $lowerServerName: " + clientSocket.inetAddress.hostAddress)
@@ -35,6 +37,12 @@ class FilesServer(storage: Storage, private val port: Int): Server {
             thread.start()
             Thread.sleep(10)
         }
+    }
+
+    override fun stop() {
+        clientsManager.stop()
+        serverSocket.close()
+        super.stop()
     }
 
 }

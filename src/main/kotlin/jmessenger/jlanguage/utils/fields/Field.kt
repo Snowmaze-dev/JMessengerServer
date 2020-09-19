@@ -1,4 +1,4 @@
-package jmessenger.jlanguage.utils
+package jmessenger.jlanguage.utils.fields
 
 interface Field {
 

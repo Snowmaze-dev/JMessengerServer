@@ -41,4 +41,6 @@ interface Storage {
 
     fun removeAttachmentFromMessage(messageId: Int, documentId: Int)
 
+    fun stop()
+
 }

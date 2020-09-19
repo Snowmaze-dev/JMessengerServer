@@ -261,4 +261,14 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
 
     abstract fun openConnection(host: String, port: Int, database: String, login: String, password: String): Connection
 
+    override fun stop() {
+        var aborted = false
+        connection.abort {
+            aborted = true
+        }
+        while(!aborted) {
+            Thread.sleep(5)
+        }
+    }
+
 }
