@@ -1,9 +1,9 @@
 package jmessenger.storages
 
+import jmessenger.coreserver.LoggedUser
 import jmessenger.jlanguage.messages.Dialog
 import jmessenger.jlanguage.messages.Document
 import jmessenger.jlanguage.messages.TextMessage
-import jmessenger.jmessengerserver.LoggedUser
 
 interface Storage {
 
@@ -23,7 +23,7 @@ interface Storage {
 
     fun getMessages(dialogId: Int, fromId: Int): List<TextMessage>
 
-    fun getDialog(userId: Int, otherUser: Int): Dialog?
+    fun getDialog(userId: Int, otherUser: Int, otherUserLogin: String): Dialog?
 
     fun getMessage(id: Int): TextMessage
 

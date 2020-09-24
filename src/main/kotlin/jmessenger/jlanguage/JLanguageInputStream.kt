@@ -18,10 +18,10 @@ internal class JLanguageInputStream(inputStream: InputStream) {
     private val stream = DataInputStream(inputStream)
 
     fun parseLastMessage(): JMessage {
-        val messageType = stream.readShort()
+        val messageType = stream.readShort().toInt()
         val map = mutableMapOf<String, Any>()
         while (true) {
-            val type = stream.readByte()
+            val type = stream.readByte().toInt()
             if (type == TypesUtils.END) {
                 break
             }
@@ -35,7 +35,7 @@ internal class JLanguageInputStream(inputStream: InputStream) {
         return message
     }
 
-    private fun readNextValue(type: Byte): Any = when (type) {
+    private fun readNextValue(type: Int): Any = when (type) {
         INT -> stream.readInt()
         LONG -> stream.readLong()
         SHORT -> stream.readShort()

@@ -1,13 +1,16 @@
 package jmessenger
 
+import jmessenger.coreserver.LoggedUser
 import jmessenger.jlanguage.JLanguageInputStream
-import jmessenger.jlanguage.JLanguageOutputStream
+import jmessenger.jlanguage.Task
+import jmessenger.jlanguage.WriteMessageTask
 import jmessenger.jlanguage.messages.AuthMessage
 import jmessenger.jlanguage.messages.DisconnectMessage
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.SignalMessage
-import jmessenger.jmessengerserver.LoggedUser
-import jmessenger.utils.LogsManager
+import jmessenger.jlanguage.utils.exceptions.UnknownMessageType
+import jmessenger.utils.LogsManager.log
+import java.io.DataOutputStream
 import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
@@ -15,19 +18,19 @@ import java.util.*
 
 abstract class UserThread(private val socket: Socket, private val serverName: String = "", private val callback: UserCallback) : Thread(), SocketUser {
 
-    internal val inputStream: JLanguageInputStream = JLanguageInputStream(socket.inputStream)
-    internal val outputStream: JLanguageOutputStream = JLanguageOutputStream(socket.outputStream)
-    private val messagesQueue = LinkedList<QueueJMessage>()
-    private var sending: Boolean = false
+    internal val inputStream = JLanguageInputStream(socket.inputStream)
+    internal val outputStream = DataOutputStream(socket.outputStream)
+    private val tasks = LinkedList<Task>()
+    var currentTask: Task? = null
+    private set
 
     override var user: LoggedUser? = null
 
     override fun run() {
         var passed = 0
         var waitingForSignal = false
-        val timeout = 100 * 1000
-        while (true) {
-            if (!socket.isConnected) break
+        val timeout = 30 * 1000
+        loop@ while (socket.isConnected) {
             sleep(5)
             passed++
             if (passed == timeout) {
@@ -53,66 +56,78 @@ abstract class UserThread(private val socket: Socket, private val serverName: St
                 inputStream.parseLastMessage()
             } catch (e: IOException) {
                 break
-            } catch (e: SocketException) {
-                break
             }
-            if (message is SignalMessage) {
-                passed = 0
-                waitingForSignal = false
+            catch (e: UnknownMessageType) {
+                e.printStackTrace()
+                inputStream.skip(inputStream.available().toLong())
                 continue
             }
-            if (message is DisconnectMessage) {
-                break
+            when (message) {
+                is SignalMessage -> {
+                    passed = 0
+                    waitingForSignal = false
+                }
+                is DisconnectMessage -> break@loop
+                is AuthMessage -> {
+                    logMessage(message)
+                    callback.onAuthorize(this, message)
+                }
+                else -> onMessageReceived(message)
             }
-            onMessageReceived(message)
         }
         onDisconnect()
     }
 
+    private fun logMessage(message: JMessage) {
+        log("$serverName: Received message from " + toString() + " - $message")
+    }
+
     override fun onMessageReceived(message: JMessage) {
-        if (message is AuthMessage) {
-            callback.onAuthorize(this, message)
-        }
-        LogsManager.log("$serverName: Received message from " + user() + " $message")
+        logMessage(message)
+    }
+
+    fun addTask(task: Task) {
+        tasks.addLast(task)
+        if(currentTask == null) executeFirstTask()
     }
 
     override fun sendMessage(message: JMessage, log: Boolean) {
-        messagesQueue.addLast(QueueJMessage(message, log))
-        if(!sending) {
-            sendFirstMessage()
-        }
+        addTask(WriteMessageTask(message, outputStream) {
+            if (log) log("Message $message sent to " + user())
+        })
     }
 
-    private fun sendFirstMessage() {
-        val message = messagesQueue.poll() ?: run {
-            sending = false
+    private fun executeFirstTask() {
+        val task = tasks.poll() ?: run {
+            currentTask = null
             return
         }
-        sending = true
         try {
-            outputStream.sendMessage(message.jMessage)
+            currentTask = task
+            task.execute()
         } catch (e: SocketException) {
             socket.close()
-            messagesQueue.clear()
-            callback.onDisconnect(this)
+            tasks.clear()
+            return
         }
-        if (message.log) LogsManager.log("Send message to " + user() + ": ${message.jMessage}")
-        sendFirstMessage()
+        executeFirstTask()
     }
 
     private fun onDisconnect() {
-        LogsManager.log("$serverName: " + user() + " disconnected")
+        log("$serverName: " + toString() + " disconnected")
         if (!socket.isClosed) socket.close()
         callback.onDisconnect(this)
     }
 
     override fun disconnect() {
         sendMessage(DisconnectMessage(), false)
-        while (messagesQueue.isNotEmpty()) {
+        while (tasks.isNotEmpty()) {
             sleep(5)
         }
         socket.close()
     }
+
+    override fun toString() = user() + "(${socket.inetAddress.hostAddress})"
 
     interface UserCallback {
 

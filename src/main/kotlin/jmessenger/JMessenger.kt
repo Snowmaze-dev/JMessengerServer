@@ -1,8 +1,8 @@
 package jmessenger
 
+import jmessenger.coreserver.CoreServer
+import jmessenger.filesserver.FilesServer
 import jmessenger.jlanguage.utils.JMessagesUtils
-import jmessenger.jmessengerfilesserver.FilesServer
-import jmessenger.jmessengerserver.CoreServer
 import jmessenger.storages.Storage
 import jmessenger.storages.Storages
 import jmessenger.storages.jdbc.MySQLStorage
@@ -34,6 +34,8 @@ class JMessenger {
             outputStream.write(inputStream.readBytes())
             inputStream.close()
             outputStream.close()
+            log("${configFile.absolutePath} created")
+            return
         }
         try {
             val config = Yaml().load<Map<String, *>>(configFile.inputStream())
@@ -82,7 +84,9 @@ class JMessenger {
         })
         val scanner = Scanner(System.`in`)
         while (true) {
-            val command = scanner.next().trim()
+            val args = scanner.nextLine().trim().split(" ")
+            if(args.isEmpty()) continue
+            val command = args[0]
             if(stopped) break
             logInput(command)
             if (command == "online") {
@@ -90,6 +94,16 @@ class JMessenger {
                 for (server in servers) {
                     log(" ${server.serverName}: ${server.online}")
                 }
+            }
+            if(command == "user") {
+                if(args.size < 2) {
+                    log("Input user login.")
+                    continue
+                }
+                val login = args[1]
+                val user = storage.getUser(login)
+                log("User ${user.login}:")
+                log("  id: ${user.id}")
             }
             if(command == "stop" || command == "shutdown") {
                 stop()
@@ -103,8 +117,8 @@ class JMessenger {
     }
 
     fun stop() {
-        stopped = true
         val beginShutdown = Date().time
+        stopped = true
         executeOnAllServers { it.stop() }
         storage.stop()
         log("JMessenger Server stopped in " + (Date().time-beginShutdown) + "ms")

@@ -1,9 +1,9 @@
 package jmessenger.storages.jdbc
 
+import jmessenger.coreserver.LoggedUser
 import jmessenger.jlanguage.messages.Dialog
 import jmessenger.jlanguage.messages.Document
 import jmessenger.jlanguage.messages.TextMessage
-import jmessenger.jmessengerserver.LoggedUser
 import jmessenger.storages.Message
 import jmessenger.storages.Storage
 import jmessenger.storages.exceptions.NoSuchUserException
@@ -174,7 +174,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
         return messages.toList()
     }
 
-    override fun getDialog(userId: Int, otherUser: Int): Dialog? {
+    override fun getDialog(userId: Int, otherUser: Int, otherUserLogin: String): Dialog? {
         val statement = prepareStatement()
         val dialogs = getDialogsSet(statement, userId, otherUser)
         val id = if (getSetSize(dialogs) > 0) {
@@ -189,7 +189,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
         }
         set.close()
         statement.close()
-        return Dialog().apply {
+        return Dialog(otherUserLogin).apply {
             lastMessage = message
         }
 

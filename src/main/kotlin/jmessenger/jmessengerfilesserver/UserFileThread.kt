@@ -1,6 +1,7 @@
 package jmessenger.jmessengerfilesserver
 
 import jmessenger.UserThread
+import jmessenger.jlanguage.WriteStreamTask
 import jmessenger.jlanguage.messages.Document.Companion.IMAGE
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.requests.RequestDownloadDocument
@@ -13,6 +14,8 @@ import java.net.Socket
 import java.util.*
 
 class UserFileThread(socket: Socket, serverName: String, private val threadCallback: UserFileThreadCallback, private val folder: File) : UserThread(socket, serverName, threadCallback), FileSocketUser {
+
+    private var task: WriteStreamTask? = null
 
     override fun onMessageReceived(message: JMessage) {
         super.onMessageReceived(message)
@@ -29,16 +32,17 @@ class UserFileThread(socket: Socket, serverName: String, private val threadCallb
                 threadCallback.onImageReceived(this, fileName, message.requestId)
             }
         }
-        if(message is RequestDownloadDocument) {
-            threadCallback.onRequestDownloadImage(this, message)
-        }
+        if(message is RequestDownloadDocument) threadCallback.onRequestDownloadImage(this, message)
     }
 
-    override fun sendFileToUser(filename: String) { // TODO
+    override fun sendFileToUser(filename: String) {
         val fileInputStream = File(folder, filename).inputStream()
         val start = Date().time
-        outputStream.writeStream(fileInputStream)
-        LogsManager.log("File $filename sent in " + ((Date().time - start)/1000.0).round(2) + " seconds to " + user())
+        task = WriteStreamTask(fileInputStream, outputStream) {
+            LogsManager.log("File $filename sent in " + ((Date().time - start)/1000.0).round(2) + " seconds to " + user())
+            task = null
+        }
+        addTask(task!!)
     }
 
     interface UserFileThreadCallback : UserCallback {

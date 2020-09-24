@@ -24,29 +24,23 @@ internal class JLanguageOutputStream(outputStream: OutputStream) {
             val value = field.get(message) ?: continue
             val type = TypesUtils.getType(value)
             if(type == LIST && (value as List<*>).size==0) continue // Skip field if list is empty
-            stream.writeByte(type.toInt())
+            stream.writeByte(type)
             stream.writeUTF(field.name)
-            if (type == INT) {
-                stream.writeInt(value as Int)
-            }
-            if (type == STRING) {
-                stream.writeUTF(value as String)
-            }
-            if (type == LONG) {
-                stream.writeLong(value as Long)
-            }
-            if (type == LIST) {
-                val list = value as List<JMessage>
-                stream.writeInt(list.size)
-                for (msg in list) {
-                    writeMessage(msg)
+            when (type) {
+                INT -> stream.writeInt(value as Int)
+                STRING -> stream.writeUTF(value as String)
+                LONG -> stream.writeLong(value as Long)
+                LIST -> {
+                    val list = value as List<JMessage>
+                    stream.writeInt(list.size)
+                    for (msg in list) {
+                        writeMessage(msg)
+                    }
                 }
-            }
-            if (type == MESSAGE) {
-                writeMessage(value as JMessage)
+                MESSAGE -> writeMessage(value as JMessage)
             }
         }
-        stream.writeByte(END.toInt())
+        stream.writeByte(END)
     }
 
     fun sendMessage(message: JMessage) {

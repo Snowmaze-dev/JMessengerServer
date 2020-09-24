@@ -10,7 +10,7 @@ class DataInputStream(inputStream: InputStream) : FilterInputStream(inputStream)
 
     private fun waitBytes(count: Int) {
         while (stream.available() < count) {
-            Thread.sleep(1)
+            Thread.sleep(5)
         }
     }
 

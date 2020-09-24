@@ -1,7 +1,7 @@
 package jmessenger
 
+import jmessenger.coreserver.LoggedUser
 import jmessenger.jlanguage.messages.JMessage
-import jmessenger.jmessengerserver.LoggedUser
 
 interface User {
 

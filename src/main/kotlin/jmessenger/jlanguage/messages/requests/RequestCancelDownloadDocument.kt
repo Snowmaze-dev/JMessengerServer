@@ -1,0 +1,6 @@
+package jmessenger.jlanguage.messages.requests
+
+import jmessenger.jlanguage.messages.JMessage
+import jmessenger.jlanguage.utils.JMessagesUtils.REQUEST_CANCEL_DOWNLOAD_DOCUMENT
+
+class RequestCancelDownloadDocument : JMessage(REQUEST_CANCEL_DOWNLOAD_DOCUMENT)

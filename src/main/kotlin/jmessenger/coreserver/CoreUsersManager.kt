@@ -1,4 +1,4 @@
-package jmessenger.jmessengerserver
+package jmessenger.coreserver
 
 import jmessenger.SocketUser
 import jmessenger.User
@@ -34,7 +34,7 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
         }
         val notification = NewMessageNotification().apply { this.message = message }
         sendMessageExcept(message.fromUser, user, notification)
-        if(message.fromUser != message.toUser) {
+        if (message.fromUser != message.toUser) {
             usersThreads[message.toUser]?.toList()?.forEach {
                 it.sendMessage(notification)
             }
@@ -59,24 +59,27 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
     }
 
     override fun onRequestLoginById(user: SocketUser, requestUserById: RequestUserById) {
-        with(requestUserById) {
-            if (checkUnauthorized(user, requestId)) return
+        if (checkUnauthorized(user, requestUserById.requestId)) return
+        user.sendMessage(
             try {
-                val login = storage.getUserLogin(id)
-                user.sendMessage(UserMessage(id, login, storage.getDialog(user.user!!.id, id, login)), requestId)
+                val login = storage.getUserLogin(requestUserById.id)
+                UserMessage(requestUserById.id, login, storage.getDialog(user.user!!.id, requestUserById.id, login))
             } catch (e: NoSuchUserException) {
-                user.sendMessage(NoSuchUserError(), requestId)
-            }
-        }
+                NoSuchUserError()
+            }, requestUserById.requestId
+        )
     }
 
     override fun onRequestIdByLogin(user: SocketUser, requestUserByLogin: RequestUserByLogin) {
-        try {
-            val id = storage.getUserId(requestUserByLogin.login)
-            user.sendMessage(UserMessage(id, requestUserByLogin.login, storage.getDialog(user.user!!.id, id, requestUserByLogin.login)), requestUserByLogin.requestId
-            )
-        } catch (e: NoSuchUserException) {
-            user.sendMessage(NoSuchUserError(), requestUserByLogin.requestId)
+        with(requestUserByLogin) {
+            try {
+                val id = storage.getUserId(login)
+                user.sendMessage(
+                    UserMessage(id, login, storage.getDialog(user.user!!.id, id, login)), requestId
+                )
+            } catch (e: NoSuchUserException) {
+                user.sendMessage(NoSuchUserError(), requestId)
+            }
         }
     }
 
@@ -88,14 +91,14 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
         if (message.fromUser == userId) {
             storage.editMessage(message.id, editedMessage.message)
             editedMessage.attachments.forEach {
-                if(!message.attachments.contains(it)) {
+                if (!message.attachments.contains(it)) {
                     if (it is Document) {
                         storage.addDocumentToMessage(editedMessage.id, it.id, it.documentType)
                     }
                 }
             }
             message.attachments.forEach {
-                if(!editedMessage.attachments.contains(it)) {
+                if (!editedMessage.attachments.contains(it)) {
                     storage.removeAttachmentFromMessage(editedMessage.id, it.id)
                 }
             }
@@ -104,26 +107,23 @@ class CoreUsersManager(storage: Storage) : UsersManager(storage), CoreUserThread
                 textMessage = editedMessage
             }
             sendMessageExcept(user.user!!.id, user, notification)
-            if(message.fromUser != message.toUser) {
+            if (message.fromUser != message.toUser) {
                 usersThreads[otherUser]?.toList()?.forEach {
                     it.sendMessage(notification)
                 }
             }
             user.sendMessage(SuccessMessage(), requestEditMessage.requestId)
-        }
-        else user.sendMessage(PermissionDeniedMessage(), requestEditMessage.requestId)
+        } else user.sendMessage(PermissionDeniedMessage(), requestEditMessage.requestId)
     }
 
     private fun sendMessageExcept(toUser: Int, user: SocketUser, message: RequestMessage, requestId: Int) {
-            usersThreads[toUser]?.forEach {
-                if (user != it) it.sendMessage(message, requestId)
-            }
+        usersThreads[toUser]?.forEach {
+            if (user != it) it.sendMessage(message, requestId)
+        }
     }
 
     private fun sendMessageExcept(toUser: Int, userThread: User, message: JMessage) {
-            usersThreads[toUser]?.forEach {
-                if (userThread != it) it.sendMessage(message)
-            }
+        usersThreads[toUser]?.forEach { if (userThread != it) it.sendMessage(message) }
     }
 
 
