@@ -13,9 +13,9 @@ import jmessenger.jlanguage.utils.TypesUtils.STRING
 import java.io.InputStream
 import java.io.OutputStream
 
-internal class JLanguageInputStream(inputStream: InputStream) {
+internal class JLanguageInputStream(inputStream: InputStream, timeout: Int) {
 
-    private val stream = DataInputStream(inputStream)
+    private val stream = DataInputStream(inputStream, timeout)
 
     fun parseLastMessage(): JMessage {
         val messageType = stream.readShort().toInt()
@@ -25,7 +25,7 @@ internal class JLanguageInputStream(inputStream: InputStream) {
             if (type == TypesUtils.END) {
                 break
             }
-            val name = stream.readUTF()
+            val name = stream.readString()
             map[name] = readNextValue(type)
         }
         val message = JMessagesUtils.getMessage(messageType)
@@ -39,7 +39,7 @@ internal class JLanguageInputStream(inputStream: InputStream) {
         INT -> stream.readInt()
         LONG -> stream.readLong()
         SHORT -> stream.readShort()
-        STRING -> stream.readUTF()
+        STRING -> stream.readString()
         LIST -> {
             val listMessages = mutableListOf<JMessage>()
             val size = stream.readInt()
@@ -58,7 +58,7 @@ internal class JLanguageInputStream(inputStream: InputStream) {
 
     fun readLong() = stream.readLong()
 
-    fun readUTF() = stream.readUTF()
+    fun readUTF() = stream.readString()
 
     fun readByte() = stream.readByte()
 

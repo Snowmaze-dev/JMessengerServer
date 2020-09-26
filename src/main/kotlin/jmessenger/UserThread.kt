@@ -8,9 +8,10 @@ import jmessenger.jlanguage.messages.AuthMessage
 import jmessenger.jlanguage.messages.DisconnectMessage
 import jmessenger.jlanguage.messages.JMessage
 import jmessenger.jlanguage.messages.SignalMessage
-import jmessenger.jlanguage.utils.exceptions.UnknownMessageType
+import jmessenger.jlanguage.utils.DataOutputStream
+import jmessenger.jlanguage.utils.exceptions.TimeoutException
+import jmessenger.jlanguage.utils.exceptions.UnknownMessage
 import jmessenger.utils.LogsManager.log
-import java.io.DataOutputStream
 import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
@@ -18,7 +19,7 @@ import java.util.*
 
 abstract class UserThread(private val socket: Socket, private val serverName: String = "", private val callback: UserCallback) : Thread(), SocketUser {
 
-    internal val inputStream = JLanguageInputStream(socket.inputStream)
+    internal val inputStream = JLanguageInputStream(socket.inputStream, 20*1000)
     internal val outputStream = DataOutputStream(socket.outputStream)
     private val tasks = LinkedList<Task>()
     var currentTask: Task? = null
@@ -26,21 +27,22 @@ abstract class UserThread(private val socket: Socket, private val serverName: St
 
     override var user: LoggedUser? = null
 
+    init {
+        name = toString()
+    }
+
     override fun run() {
         var passed = 0
         var waitingForSignal = false
-        val timeout = 30 * 1000
+        val sleepTime = 10L
+        val timeout = (50/sleepTime * 1000).toInt()
         loop@ while (socket.isConnected) {
-            sleep(5)
+            sleep(sleepTime)
             passed++
             if (passed == timeout) {
-                if (waitingForSignal) break
+                if (waitingForSignal)  break
                 else {
-                    try {
-                        sendMessage(SignalMessage(), false)
-                    } catch (e: Exception) {
-                        break
-                    }
+                    sendMessage(SignalMessage(), false)
                     waitingForSignal = true
                     passed = 0
                 }
@@ -55,9 +57,14 @@ abstract class UserThread(private val socket: Socket, private val serverName: St
             val message = try {
                 inputStream.parseLastMessage()
             } catch (e: IOException) {
+                e.printStackTrace()
                 break
             }
-            catch (e: UnknownMessageType) {
+            catch(e: TimeoutException) {
+                e.printStackTrace()
+                break
+            }
+            catch (e: UnknownMessage) {
                 e.printStackTrace()
                 inputStream.skip(inputStream.available().toLong())
                 continue

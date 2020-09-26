@@ -1,6 +1,7 @@
 package jmessenger.jlanguage.utils
 
 import jmessenger.jlanguage.messages.JMessage
+import jmessenger.jlanguage.utils.exceptions.UnsupportedTypeException
 
 internal object TypesUtils {
 
@@ -22,7 +23,6 @@ internal object TypesUtils {
 
     const val MESSAGE = 8
 
-
     fun getType(obj: Any) = when (obj) {
         is Int -> INT
         is Long -> LONG
@@ -31,7 +31,7 @@ internal object TypesUtils {
         is List<*> -> LIST
         is Map<*, *> -> MAP
         is JMessage -> MESSAGE
-        else -> throw Exception()
+        else -> throw UnsupportedTypeException(obj.javaClass)
     }
 
 }

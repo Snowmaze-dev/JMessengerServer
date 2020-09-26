@@ -52,8 +52,7 @@ abstract class UsersManager(protected val storage: Storage) : UserThread.UserCal
     }
 
     override fun onDisconnect(user: SocketUser) {
-        if (unauthorizedUserThreads.contains(user)) unauthorizedUserThreads.remove(user)
-        else {
+        if(!unauthorizedUserThreads.remove(user)) {
             val id = user.user!!.id
             val sessions = usersThreads[id]
             sessions?.apply {

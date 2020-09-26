@@ -3,7 +3,7 @@ package jmessenger.storages.jdbc
 import java.sql.Connection
 import java.sql.DriverManager
 
-class MySQLStorage(host: String, port: Int, database: String, login: String, password: String) :
+class   MySQLStorage(host: String, port: Int, database: String, login: String, password: String) :
     JDBCStorage(host, port, database, login, password) {
 
     override fun init() {

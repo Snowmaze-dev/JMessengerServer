@@ -15,8 +15,10 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.sql.Statement
 
-abstract class JDBCStorage(private val host: String, private val port: Int,
-    private val database: String, private val login: String, private val password: String) : Storage {
+abstract class JDBCStorage(
+    private val host: String, private val port: Int,
+    private val database: String, private val login: String, private val password: String
+) : Storage {
 
     internal lateinit var connection: Connection
 
@@ -34,15 +36,15 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun addUser(login: String, password: String): Int {
-        val statement = prepareStatement()
-        val result = statement.executeQuery("SELECT * FROM users WHERE login = '$login'")
+        val result =
+            prepareQueryStatement("SELECT * FROM users WHERE login = '$login'").setArgument(login).executeQuery()
         if (getSetSize(result) > 0) {
             throw UserAlreadyExistException()
         }
-        statement.executeUpdate(
-            "INSERT INTO users (login, password) VALUES ('$login', 'password')",
-            Statement.RETURN_GENERATED_KEYS
-        )
+        val statement = prepareInsertStatement(
+            "INSERT INTO users (login, password) VALUES (?, ?)"
+        ).setArgument(login, 1).setArgument(password, 2)
+        statement.executeUpdate()
         val id = getInsertId(statement)
         statement.close()
         return id
@@ -62,21 +64,24 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getUser(login: String): LoggedUser {
-        val statement = prepareStatement()
-        val result = statement.executeQuery("SELECT * FROM users WHERE LOWER(login) = '${login.toLowerCase()}'")
-        if (getSetSize(result) == 0) throw NoSuchUserException()
-        val user = LoggedUser(
-            result.getInt("id"),
-            result.getString("login"),
-            result.getString("password")
-        )
+        val statement = prepareQueryStatement("SELECT * FROM users WHERE LOWER(login) = ?")
+        statement.setString(1, login.toLowerCase())
+        val result = statement.executeQuery()
+        val user = with(result) {
+            if (getSetSize(this) == 0) throw NoSuchUserException()
+            LoggedUser(
+                getInt("id"),
+                getString("login"),
+                getString("password")
+            )
+        }
         result.close()
         statement.close()
         return user
     }
 
     override fun getUserLogin(id: Int): String {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val result = statement.executeQuery("SELECT login FROM users WHERE id = $id")
         if (getSetSize(result) == 0) throw NoSuchUserException()
         val userLogin = result.getString("login")
@@ -94,7 +99,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
         fromUser = set.getInt("from_user")
         toUser = set.getInt("to_user")
         time = set.getTimestamp("time").time
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val result = statement.executeQuery("SELECT attachment_id FROM messages_attachments WHERE message_id = $id")
         while (result.next()) {
             attachments.add(getDocument(result.getInt("attachment_id")))
@@ -104,7 +109,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getDialogs(userId: Int, page: Int): List<Dialog> {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val result =
             statement.executeQuery("WITH messages AS ( SELECT m.*, ROW_NUMBER() OVER (PARTITION BY dialog_id ORDER BY id DESC) AS rn FROM messages AS m ) SELECT * FROM messages WHERE rn = 1 AND (from_user = $userId OR to_user = $userId) ORDER BY id ASC LIMIT " + (page + 1) * 15 + " OFFSET " + page * 15)
         val dialogs = mutableListOf<Dialog>()
@@ -120,14 +125,11 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
         return dialogs
     }
 
-    private fun prepareStatement() =
-        connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
-
     private fun getDialogsSet(statement: Statement, fromUser: Int, toUser: Int) =
         statement.executeQuery("SELECT * FROM dialogs WHERE (from_user = $fromUser AND to_user = $toUser) OR (from_user = $toUser AND to_user = $fromUser)")
 
     override fun addMessage(textMessage: TextMessage): Message {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val dialogs = getDialogsSet(statement, textMessage.fromUser, textMessage.toUser)
         val dialogId = if (getSetSize(dialogs) > 0) {
             dialogs.getInt("id")
@@ -142,10 +144,9 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
             )
             getInsertId(statement)
         }
-        val messageStatement = connection.prepareStatement(
+        val messageStatement = prepareInsertStatement(
             "INSERT INTO messages (message, dialog_id, from_user, to_user, time) " +
                     "VALUES (?, $dialogId, ${textMessage.fromUser}, ${textMessage.toUser}, now())",
-            Statement.RETURN_GENERATED_KEYS
         )
         messageStatement.setString(1, textMessage.message)
         messageStatement.executeUpdate()
@@ -161,7 +162,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getMessages(dialogId: Int, fromId: Int): List<TextMessage> {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val result =
             statement.executeQuery("SELECT * FROM messages WHERE id < $fromId AND dialog_id = $dialogId ORDER BY id DESC FETCH FIRST 10 ROWS ONLY")
         val messages = mutableListOf<TextMessage>()
@@ -175,7 +176,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getDialog(userId: Int, otherUser: Int, otherUserLogin: String): Dialog? {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val dialogs = getDialogsSet(statement, userId, otherUser)
         val id = if (getSetSize(dialogs) > 0) {
             dialogs.getInt("id")
@@ -196,7 +197,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getMessage(id: Int): TextMessage {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val set = statement.executeQuery("SELECT * FROM messages WHERE id = $id")
         set.first()
         val message = getMessage(set)
@@ -206,19 +207,19 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun editMessage(id: Int, message: String) {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         statement.executeUpdate("UPDATE messages SET message = '$message' WHERE id = $id")
         statement.close()
     }
 
     override fun deleteMessage(id: Int) {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         statement.executeUpdate("DELETE FROM messages WHERE id = $id")
         statement.close()
     }
 
     override fun addFile(name: String, type: Int, parentId: Int): Int {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         statement.executeUpdate(
             "INSERT INTO documents (name, type, parent_id) VALUES ('$name', $type, $parentId)",
             Statement.RETURN_GENERATED_KEYS
@@ -229,7 +230,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getDocumentName(id: Int): String {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val query = statement.executeQuery("SELECT name FROM documents WHERE id = $id")
         query.first()
         val documentName = query.getString("name")
@@ -239,7 +240,7 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun getDocument(id: Int): Document {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         val query = statement.executeQuery("SELECT name, type FROM documents WHERE id = $id")
         query.first()
         val document = Document(id, query.getString("name"), query.getInt("type"))
@@ -249,13 +250,13 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
     }
 
     override fun addDocumentToMessage(messageId: Int, documentId: Int, type: Int) {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         statement.executeUpdate("INSERT INTO messages_attachments VALUES ($messageId, $documentId, $type)")
         statement.closeOnCompletion()
     }
 
     override fun removeAttachmentFromMessage(messageId: Int, documentId: Int) {
-        val statement = prepareStatement()
+        val statement = prepareQueryStatement()
         statement.executeUpdate("DELETE FROM messages_attachments WHERE message_id = $messageId AND attachment_id = $documentId")
     }
 
@@ -266,9 +267,17 @@ abstract class JDBCStorage(private val host: String, private val port: Int,
         connection.abort {
             aborted = true
         }
-        while(!aborted) {
+        while (!aborted) {
             Thread.sleep(5)
         }
     }
+
+    private fun prepareQueryStatement() =
+        connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+
+    private fun prepareQueryStatement(sql: String) =
+        connection.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+
+    private fun prepareInsertStatement(sql: String) = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
 
 }

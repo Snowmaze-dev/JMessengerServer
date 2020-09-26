@@ -1,9 +1,9 @@
 package jmessenger.jlanguage
 
 import jmessenger.jlanguage.messages.JMessage
+import jmessenger.jlanguage.utils.DataOutputStream
 import jmessenger.jlanguage.utils.JMessagesUtils
 import jmessenger.jlanguage.utils.TypesUtils
-import java.io.DataOutputStream
 
 class WriteMessageTask(private val message: JMessage, private val stream: DataOutputStream,
                        resultCallback: () -> Unit = {}): Task(resultCallback) {
@@ -24,10 +24,10 @@ class WriteMessageTask(private val message: JMessage, private val stream: DataOu
             val type = TypesUtils.getType(value)
             if(type == TypesUtils.LIST && (value as List<*>).size==0) continue // Skip field if list is empty
             stream.writeByte(type)
-            stream.writeUTF(field.name)
+            stream.writeString(field.name)
             when (type) {
                 TypesUtils.INT -> stream.writeInt(value as Int)
-                TypesUtils.STRING -> stream.writeUTF(value as String)
+                TypesUtils.STRING -> stream.writeString(value as String)
                 TypesUtils.LONG -> stream.writeLong(value as Long)
                 TypesUtils.LIST -> {
                     val list = value as List<JMessage>

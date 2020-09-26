@@ -1,7 +1,7 @@
 package jmessenger.jlanguage
 
+import jmessenger.jlanguage.utils.DataOutputStream
 import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.InputStream
 
 class WriteStreamTask(private val inputStream: InputStream, private val stream: DataOutputStream, private val bufferSizeValue: Int = 8,
